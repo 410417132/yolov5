@@ -1110,10 +1110,12 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
+        
+        #https://github.com/hujie-frank/SENet
         if m in {
                 Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x, 
-                SE}:#代碼 https://github.com/hujie-frank/SENet
+                SE}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
@@ -1535,12 +1537,40 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             c2 = ch[f] * args[0] ** 2
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
+
+        
         #2023/11/20 add 
-        #csdn #https://yolov5.blog.csdn.net/article/details/124443059
-        #代碼 #https://github.com/ZjjConan/SimAM
+        #https://yolov5.blog.csdn.net/article/details/124443059
+        
+        #SimAM
+        #http://proceedings.mlr.press/v139/yang21o/yang21o.pdf
+        #https://github.com/ZjjConan/SimAM
         elif m in [SimAM]:
             args = [*args[:]]
-        #
+
+        #NAMAttention
+        #https://arxiv.org/pdf/2111.12419.pdf
+        #https://github.com/Christian-lyc/NAM
+        elif m in [NAMAttention]:  # channels  # CrissCrossAttention bug,
+            c1 = ch[f]
+            args = [c1]
+
+        #GAMAttention
+        #https://arxiv.org/pdf/2112.05561v1.pdf
+        elif m in [GAMAttention]:  # in_channels out_channels
+            c1, c2 = ch[f], args[0]
+            if c2 != no:
+            c2 = make_divisible(c2 * gw, 8)
+            args = [c1, c2, *args[1:]]
+
+        #A2-Net
+        #https://arxiv.org/pdf/1810.11579.pdf
+        elif m in [DoubleAttention]:  # channels args
+            c2 = ch[f]
+            args = [c2, *args[0:]]
+
+
+        
         else:
             c2 = ch[f]
 
@@ -1906,10 +1936,19 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
                 args[j] = eval(a) if isinstance(a, str) else a  # eval strings
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
+
+        #SE
+        #https://arxiv.org/pdf/1709.01507.pdf
+        #https://github.com/hujie-frank/SENet
+        #CBAM
+        #https://arxiv.org/pdf/1807.06521.pdf
+        #ECA
+        #https://arxiv.org/abs/1910.03151
+        #https://github.com/BangguWu/ECANet
         if m in {
                 Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x, 
-                SE}:#代碼 https://github.com/hujie-frank/SENet
+                SE, CBAM, ECA}:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
