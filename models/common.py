@@ -863,7 +863,10 @@ class Classify(nn.Module):
 
 
 #2023/11/20 add https://yolov5.blog.csdn.net/article/details/124443059
-#代碼 https://github.com/hujie-frank/SENet
+
+#SE
+#https://arxiv.org/pdf/1709.01507.pdf
+#https://github.com/hujie-frank/SENet
 class SE(nn.Module):
     def __init__(self, c1, c2, ratio=16):
         super(SE, self).__init__()
@@ -885,6 +888,7 @@ class SE(nn.Module):
 
 
 # CBAM
+#https://arxiv.org/pdf/1807.06521.pdf
 class ChannelAttention(nn.Module):
     def __init__(self, in_planes, ratio=16):
         super(ChannelAttention, self).__init__()
@@ -931,7 +935,9 @@ class CBAM(nn.Module):
         return out
 
 
-#代碼 https://github.com/BangguWu/ECANet
+#ECA
+#https://arxiv.org/abs/1910.03151
+#https://github.com/BangguWu/ECANet
 class ECA(nn.Module):
     """Constructs a ECA module.
     Args:
@@ -955,7 +961,9 @@ class ECA(nn.Module):
         return x * y.expand_as(x)
 
 
-#代碼 https://github.com/ZjjConan/SimAM
+#SimAM
+#http://proceedings.mlr.press/v139/yang21o/yang21o.pdf
+#https://github.com/ZjjConan/SimAM
 class SimAM(torch.nn.Module):
     def __init__(self, e_lambda=1e-4):
         super(SimAM, self).__init__()
@@ -970,6 +978,140 @@ class SimAM(torch.nn.Module):
         y = x_minus_mu_square / (4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda)) + 0.5
 
         return x * self.activaton(y)
-        
+
+
+#NAMAttention
+#https://arxiv.org/pdf/2111.12419.pdf
+#https://github.com/Christian-lyc/NAM
+import torch.nn as nn
+import torch
+from torch.nn import functional as F
+
+class Channel_Att(nn.Module):
+    def __init__(self, channels):
+        super(Channel_Att, self).__init__()
+        self.channels = channels
+
+        self.bn2 = nn.BatchNorm2d(self.channels, affine=True)
+
+    def forward(self, x):
+        residual = x
+
+        x = self.bn2(x)
+        weight_bn = self.bn2.weight.data.abs() / torch.sum(self.bn2.weight.data.abs())
+        x = x.permute(0, 2, 3, 1).contiguous()
+        x = torch.mul(weight_bn, x)
+        x = x.permute(0, 3, 1, 2).contiguous()
+
+        x = torch.sigmoid(x) * residual  #
+
+        return x
+
+
+class NAMAttention(nn.Module):
+    def __init__(self, channels):
+        super(NAMAttention, self).__init__()
+        self.Channel_Att = Channel_Att(channels)
+
+    def forward(self, x):
+        x_out1 = self.Channel_Att(x)
+
+        return x_out1
+
+#GAMAttention
+#https://arxiv.org/pdf/2112.05561v1.pdf
+import numpy as np
+import torch
+from torch import nn
+from torch.nn import init
+
+class GAMAttention(nn.Module):
+
+    def __init__(self, c1, c2, group=True, rate=4):
+        super(GAMAttention, self).__init__()
+
+        self.channel_attention = nn.Sequential(
+            nn.Linear(c1, int(c1 / rate)),
+            nn.ReLU(inplace=True),
+            nn.Linear(int(c1 / rate), c1)
+        )
+        self.spatial_attention = nn.Sequential(
+            nn.Conv2d(c1, c1 // rate, kernel_size=7, padding=3, groups=rate) if group else nn.Conv2d(c1, int(c1 / rate),
+                                                                                                     kernel_size=7,
+                                                                                                     padding=3),
+            nn.BatchNorm2d(int(c1 / rate)),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c1 // rate, c2, kernel_size=7, padding=3, groups=rate) if group else nn.Conv2d(int(c1 / rate), c2,
+                                                                                                     kernel_size=7,
+                                                                                                     padding=3),
+            nn.BatchNorm2d(c2)
+        )
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        x_permute = x.permute(0, 2, 3, 1).view(b, -1, c)
+        x_att_permute = self.channel_attention(x_permute).view(b, h, w, c)
+        x_channel_att = x_att_permute.permute(0, 3, 1, 2)
+        x = x * x_channel_att
+
+        x_spatial_att = self.spatial_attention(x).sigmoid()
+        x_spatial_att = channel_shuffle(x_spatial_att, 4)  # last shuffle
+        out = x * x_spatial_att
+        return out
+
+
+#A2-Net
+#https://arxiv.org/pdf/1810.11579.pdf
+from torch.nn import init
+
+class DoubleAttention(nn.Module):
+
+    def __init__(self, in_channels, c_m, c_n, reconstruct=True):
+        super().__init__()
+        self.in_channels = in_channels
+        self.reconstruct = reconstruct
+        self.c_m = c_m
+        self.c_n = c_n
+        self.convA = nn.Conv2d(in_channels, c_m, 1)
+        self.convB = nn.Conv2d(in_channels, c_n, 1)
+        self.convV = nn.Conv2d(in_channels, c_n, 1)
+        if self.reconstruct:
+            self.conv_reconstruct = nn.Conv2d(c_m, in_channels, kernel_size=1)
+        self.init_weights()
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                init.constant_(m.weight, 1)
+                init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                init.normal_(m.weight, std=0.001)
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        assert c == self.in_channels
+        A = self.convA(x)  # b,c_m,h,w
+        B = self.convB(x)  # b,c_n,h,w
+        V = self.convV(x)  # b,c_n,h,w
+        tmpA = A.view(b, self.c_m, -1)
+        attention_maps = F.softmax(B.view(b, self.c_n, -1), dim=1)
+        attention_vectors = F.softmax(V.view(b, self.c_n, -1), dim=1)
+        # step 1: feature gating
+        global_descriptors = torch.bmm(tmpA, attention_maps.permute(0, 2, 1))  # b.c_m,c_n
+        # step 2: feature distribution
+        tmpZ = global_descriptors.matmul(attention_vectors)  # b,c_m,h*w
+        tmpZ = tmpZ.view(b, self.c_m, h, w)  # b,c_m,h,w
+        if self.reconstruct:
+            tmpZ = self.conv_reconstruct(tmpZ)
+
+        return tmpZ
+
+
 
 
