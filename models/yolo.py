@@ -1560,7 +1560,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m in [GAMAttention]:  # in_channels out_channels
             c1, c2 = ch[f], args[0]
             if c2 != no:
-            c2 = make_divisible(c2 * gw, 8)
+                c2 = make_divisible(c2 * gw, 8)
             args = [c1, c2, *args[1:]]
 
         #A2-Net
