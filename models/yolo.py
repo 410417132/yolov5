@@ -7147,8 +7147,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
         #2023/11/20 add 
-        #csdn #https://yolov5.blog.csdn.net/article/details/124443059
-        #代碼 #https://github.com/ZjjConan/SimAM
+        #https://yolov5.blog.csdn.net/article/details/124443059
+        #https://github.com/ZjjConan/SimAM
         elif m in [SimAM]:
             args = [*args[:]]
         #
@@ -7545,8 +7545,8 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
         elif m is Expand:
             c2 = ch[f] // args[0] ** 2
         #2023/11/20 add 
-        #csdn #https://yolov5.blog.csdn.net/article/details/124443059
-        #代碼 #https://github.com/ZjjConan/SimAM
+        #https://yolov5.blog.csdn.net/article/details/124443059
+        #https://github.com/ZjjConan/SimAM
         elif m in [SimAM]:
             args = [*args[:]]
         #
