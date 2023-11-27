@@ -22,7 +22,7 @@ backbone:
    #[-1, 1, SimAM, [1e-4]], # SimAM
    #[-1, 1, NAMAttention, [128]], # NAMAttention
    #[-1, 1, GAMAttention, [128, True, 4]], # GAMAttention
-   #[-1, 1, DoubleAttention, [128, 128,True]], # DoubleAttention
+   #[-1, 1, DoubleAttention, [128, 128,True]], # DoubleAttention #A2-Net
    [-1, 1, Conv, [256, 3, 2]],  # 3-P3/8
    [-1, 6, C3, [256]],
    [-1, 1, Conv, [512, 3, 2]],  # 5-P4/16
