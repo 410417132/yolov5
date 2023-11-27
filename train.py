@@ -314,6 +314,10 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                     loss *= 4.
 
             # Backward
+            #2023/11/27 add 
+            #CBAM RuntimeError
+            #https://blog.csdn.net/qq_39696563/article/details/126339400
+            torch.use_deterministic_algorithms(False)
             scaler.scale(loss).backward()
 
             # Optimize - https://pytorch.org/docs/master/notes/amp_examples.html
