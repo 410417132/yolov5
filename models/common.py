@@ -887,7 +887,7 @@ class SE(nn.Module):
         return x * y.expand_as(x)
 
 
-# CBAM
+#CBAM
 #https://arxiv.org/pdf/1807.06521.pdf
 class ChannelAttention(nn.Module):
     def __init__(self, in_planes, ratio=16):
@@ -982,8 +982,6 @@ class SimAM(torch.nn.Module):
 #NAMAttention
 #https://arxiv.org/pdf/2111.12419.pdf
 #https://github.com/Christian-lyc/NAM
-import torch.nn as nn
-import torch
 from torch.nn import functional as F
 
 class Channel_Att(nn.Module):
@@ -1019,8 +1017,6 @@ class NAMAttention(nn.Module):
 
 #GAMAttention
 #https://arxiv.org/pdf/2112.05561v1.pdf
-import numpy as np
-import torch
 from torch import nn
 from torch.nn import init
 
@@ -1059,10 +1055,8 @@ class GAMAttention(nn.Module):
         return out
 
 
-#A2-Net
+#A2-Net#DoubleAttention
 #https://arxiv.org/pdf/1810.11579.pdf
-from torch.nn import init
-
 class DoubleAttention(nn.Module):
 
     def __init__(self, in_channels, c_m, c_n, reconstruct=True):
