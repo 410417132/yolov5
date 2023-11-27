@@ -1053,6 +1053,16 @@ class GAMAttention(nn.Module):
         x_spatial_att = channel_shuffle(x_spatial_att, 4)  # last shuffle
         out = x * x_spatial_att
         return out
+#2023/11/27 add
+#GAM train NameError
+#https://blog.csdn.net/m0_70388905/article/details/127330819
+def channel_shuffle(x, groups=2):   ##shuffle channel 
+        #RESHAPE----->transpose------->Flatten 
+        B, C, H, W = x.size()
+        out = x.view(B, groups, C // groups, H, W).permute(0, 2, 1, 3, 4).contiguous()
+        out=out.view(B, C, H, W) 
+        return out
+#2023/11/27 end
 
 
 #A2-Net#DoubleAttention
