@@ -1024,7 +1024,7 @@ class GAMAttention(nn.Module):
   #2023/11/27 add
   #GAM train NameError
   #https://blog.csdn.net/m0_70388905/article/details/127330819
-  def channel_shuffle(x, groups=2):   ##shuffle channel 
+    def channel_shuffle(x, groups=2):   ##shuffle channel 
         #RESHAPE----->transpose------->Flatten 
         B, C, H, W = x.size()
         out = x.view(B, groups, C // groups, H, W).permute(0, 2, 1, 3, 4).contiguous()
